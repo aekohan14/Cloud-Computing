@@ -1,0 +1,150 @@
+// Assignment 3
+// Amy Kohan
+// EE 655
+
+// Simulate engine temperature
+let MinTemp = 70; // minimum engine temperature
+let MaxTemp = 220; // maximum engine temperature
+
+// Generate a random engine temperature between MinTemp and MaxTemp
+let EngineTemp = Math.floor(Math.random() * (MaxTemp - MinTemp + 1) + MinTemp);
+
+// Create a JSON object with the value
+let msgPayload = {
+ EngineTemp: EngineTemp
+};
+
+// Set the payload to the message object
+msg.payload = JSON.stringify(msgPayload);
+
+// Return the message object to be passed to the next node
+return msg
+
+// Simulate fuel consumption
+function GenerateFuelConsumption(speed, EngineTemp) {
+ let BaseFuelConsumption = 30;                                 // Base fuel consumption as miles per gallon (mpg) or liters per 100km
+ if (speed > 60) {
+ BaseFuelConsumption -= (speed - 60) * 0.2;
+ }
+ if (EngineTemp > 200) {
+ BaseFuelConsumption -= (EngineTemp - 200) * 0.1;
+ }
+ let RandomVar = Math.random() * 2;                       // Add some randomness to simulate real-world variations, +/- 1 mpg 
+ BaseFuelConsumption += (RandomVar - 1);
+ if (BaseFuelConsumption < 10) {                              // Ensure fuel consumption doesn't go below a threshold
+ BaseFuelConsumption = 10;                                    // Minimum fuel consumption
+ }
+ return BaseFuelConsumption;
+}
+
+// Example usage in Node-RED function node
+
+let speed = msg.payload.speed;                             // Extract speed from incoming message payload
+let EngineTemp = msg.payload.EngineTemp;                   // Extract engine temperature from incoming 
+message payload
+let FuelConsumption = GenerateFuelConsumption(speed, EngineTemp);
+msg.payload = {
+ FuelConsumption: FuelConsumption.toFixed(2)                // Round to 2 decimal places
+};
+return msg;                                                 // Return the message object to pass to the next node
+
+function SimSpeed() {                                       // Function to simulate speed data
+
+ const MinSpeed = 0;                                        // Min speed of the vehicle at rest
+ const MaxSpeed = 120;                                      // Max speed - hypothetical top speed of the vehicle
+
+ const change = Math.random() > 0.5 ? 1 : -1;               // Randomly decide if the car accelerates or decelerates
+ const AccelFactor = Math.floor(Math.random() * 5 + 1);     // Random acceleration factor between 1 and 5
+ let CurrentSpeed = flow.get('CurrentSpeed') || 0;          // Retrieve the current speed from the flow context to maintain state
+ CurrentSpeed += change * AccelFactor;                      // Calculate new speed with random acceleration/deceleration
+ CurrentSpeed = Math.max(MinSpeed, Math.min(MaxSpeed, CurrentSpeed));    // Ensure the speed stays within the min and max range
+ flow.set('CurrentSpeed', CurrentSpeed);                    // Update the flow context with the new speed
+ return CurrentSpeed;
+}
+
+// Call the SimSpeed function and assign its value to msg.payload
+msg.payload = {
+ speed: SimSpeed()                                           // Simulate speed data
+};
+
+return msg;
+
+// Function to simulate seat belt engagement data
+function SimSeatBeltEngage() {
+ const ProbOfEngage = 0.8;                                   // Define the probability of the seatbelt being engaged
+ const randomNum = Math.random();
+ const SeatBeltEngaged = randomNum < ProbOfEngage;
+ return SeatBeltEngaged;
+}
+
+// Call the SimSeatBeltEngage function and assign its value to msg.payload
+msg.payload = {
+ SeatBeltEngaged: SimSeatBeltEngage() ? "Engaged" : "Disengaged"
+};
+return msg;
+
+// Function to simulate cabin temperature data
+function SimCabinTemp() {
+ const MinTemp = 15;                                   // Minimum cabin temperature
+ const MaxTemp = 30;                                   // Maximum cabin temperature
+ 
+// Simulate daily variation based on external factors
+ let hours = new Date().getHours();
+ let DailyVar = Math.sin((hours / 24) * 2 * Math.PI);
+ let CabinTemp = MinTemp + (MaxTemp - MinTemp) / 2 + (DailyVar * (MaxTemp - MinTemp) / 2);
+
+ // Add some randomness
+ let RandFluctuation = (Math.random() - 0.5) * 2;           // +/- 1 degree fluctuation
+ CabinTemp += RandFluctuation;
+ return CabinTemp;
+}
+
+// Call the SimCabinTemp function and assign its value to msg.payload
+msg.payload = {
+ CabinTemp: SimCabinTemp().toFixed(2)           // Round to 2 decimal places
+};
+return msg;
+
+// Function to simulate air quality data
+function SimAirQuality() {
+ const minAQI = 0;                     // Good air quality
+ const maxAQI = 500;                   // Hazardous air quality
+ let aqi = Math.floor(Math.random() * (maxAQI - minAQI + 1) + minAQI);
+ return aqi;
+}
+
+// Call the SimAirQuality function and assign its value to msg.payload
+msg.payload = {
+ AirQualityIndex: SimAirQuality()                       // Simulate air quality data
+};
+return msg;
+
+// Function to simulate tire pressure data for four tires
+function SimTirePress() {
+ const MinPress = 30;               // Minimum normal pressure
+ const MaxPress = 35;               // Maximum normal pressure
+ const GeneratePress = () => Math.floor(Math.random() * (MaxPress - MinPress + 1) + 
+MinPress);
+
+ // Generate random pressure for each tire
+ let TirePress = {
+ frontLeti: GeneratePress(),
+ frontRight: GeneratePress(),
+ rearLeti: GeneratePress(),
+ rearRight: GeneratePress()
+ };
+ return TirePress;
+}
+// Call the SimTirePress function and assign its value to msg.payload
+msg.payload = SimTirePress(); // Simulate tire pressure data
+// Return the message object to pass to the next node
+return msg;
+
+if (msg.payload.SeatBeltEngaged === "Engaged") {
+ msg.color = "green";
+ msg.payload = "Engaged";
+} else {
+ msg.color = "red";
+ msg.payload = "Disengaged";
+}
+return msg
