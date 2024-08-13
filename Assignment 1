@@ -1,137 +1,110 @@
-// app.js
+// Assignment 1
+// EE 655
+// node.js
 
-const express = require('express');
-const bodyParser = require('body-parser');
+// 1.	Setup and Initialization:
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
+
+const Express = require('express');
+const BodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-
 const app = express();
 const port = 3000;
 
-// Middleware to parse JSON in request body
-app.use(bodyParser.json());
+app.use(BodyParser.json());                              // Parse JSON
+app.use(Express.static('public'));                       // Static files from the 'public' directory
 
-// Serve static files from the 'public' directory
-app.use(express.static('public'));
+// Create necessary directories and files
+const PublicDir = path.join(__dirname, 'public');
+const DevicesFile = path.join(__dirname, 'devices.json');
+const LogsFile = path.join(__dirname, 'logs.txt');
 
-// Ensure the existence of necessary directories and files
-const publicDir = path.join(__dirname, 'public');
-const devicesFile = path.join(__dirname, 'devices.json');
-const logsFile = path.join(__dirname, 'logs.txt');
+FindDirectory(PublicDir);
+FindFile(DevicesFile, '[]');                      // Create empty array if file doesn't exist
+FindFile(LogsFile, '');                           // Create an empty string if text file doesn't exist
 
-ensureDirectoryExists(publicDir);
-ensureFileExists(devicesFile, '[]'); // Default to an empty array if devices.json doesn't exist
-ensureFileExists(logsFile, ''); // Default to an empty string if logs.txt doesn't exist
+// 2. Device Registration
 
-// Task 2: Device Registration
 app.post('/register', (req, res) => {
-  const { deviceId, deviceType } = req.body;
+  const { DeviceId, DeviceType } = req.body;
 
-  // Validation
-  if (!deviceId || !deviceType) {
-    return res.status(400).json({ error: 'Both deviceId and deviceType are required.' });
+  if (!DeviceId || !DeviceType) {
+    return res.status(400).json({ error: 'You need both the DeviceId and the DeviceType' });
   }
 
-  // Load existing devices from devices.json (Bonus Task)
-  const existingDevices = loadDevices();
+  const ExistingDevices = LoadDevices();                                    // Load existing devices
 
-  // Check if the device already exists
-  if (existingDevices.find(device => device.deviceId === deviceId)) {
-    return res.status(409).json({ error: 'Device already registered.' });
+  if (ExistingDevices.find(device => device.DeviceId === DeviceId)) {       // Check if device is already registered
+    return res.status(409).json({ error: 'Device already registered' });
   }
 
-  // Save new device
-  existingDevices.push({ deviceId, deviceType });
-  saveDevices(existingDevices);
-
-  // Log the registration
-  logData(`Device registered - Device ID: ${deviceId}, Device Type: ${deviceType}`);
-
-  // Respond with status 201 (Created)
-  res.status(201).json({ message: 'Device registered successfully.' });
+  ExistingDevices.push({ DeviceId, DeviceType });                           // Save new device
+  SaveDevices(ExistingDevices); 
+  LogData(`Device registered - Device ID: ${DeviceId}, Device Type: ${DeviceType}`);
+  res.status(201).json({ message: 'Device registered' });
 });
 
-// Task 3: Displaying Devices
+// 3. Displaying Devices
+
 app.get('/show', (req, res) => {
-  const existingDevices = loadDevices();
-
-  // Respond with the list of registered devices
-  res.json(existingDevices);
+  const ExistingDevices = loadDevices();        
+  res.json(ExistingDevices);              //Show exisiting devices
 });
 
-// Task 4: Receiving Device Data
+// 4. Receiving Device Data
+
 app.post('/data', (req, res) => {
-  const { deviceId, data } = req.body;
+  const { DeviceId, data } = req.body;
 
-  // Validation
-  if (!deviceId || !data) {
-    return res.status(400).json({ error: 'Both deviceId and data are required.' });
+  if (!DeviceId || !data) {
+    return res.status(400).json({ error: 'Both the DeviceId and data are needed' });
   }
 
-  // Log the received data with a timestamp
-  logData(`Data received from Device ID ${deviceId} - ${data}`);
-
-  // Respond with a confirmation message
-  res.json({ message: 'Data received successfully.' });
+  LogData(`Data received from Device ID ${DeviceId} - ${data}`);       // Log data
+  res.json({ message: 'Data received' });
 });
 
-// Task 5: Sending Commands to Devices
-app.post('/command', (req, res) => {
-  const { deviceId, command } = req.body;
+// 5. Sending Commands to Devices
 
-  // Validation
-  if (!deviceId || !command) {
-    return res.status(400).json({ error: 'Both deviceId and command are required.' });
+app.post('/command', (req, res) => {
+  const { DeviceId, command } = req.body;
+
+  if (!DeviceId || !command) {
+    return res.status(400).json({ error: 'Both the DeviceId and the command are needed' });
   }
 
-  // Log the command with a timestamp
-  logData(`Command sent to Device ID ${deviceId} - ${command}`);
-
-  // Respond with a confirmation message
+  LogData(`Command sent to Device ID ${DeviceId} - ${command}`);        // Log command
   res.json({ message: 'Command sent successfully.' });
 });
 
-// Task 6: Logging
-function logData(message) {
-  const timestamp = new Date().toISOString();
-  fs.appendFileSync(logsFile, `${timestamp}: ${message}\n`);
-}
+// 6. Logging
 
-// Bonus Task: Load existing devices from devices.json
-function loadDevices() {
-  try {
-    const data = fs.readFileSync(devicesFile, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error(`Error reading devices.json: ${error.message}`);
-    return [];
-  }
+function LogData(message) {
+  const Timestamp = new Date().toISOString();
+  fs.appendFileSync(logsFile, `${Timestamp}: ${message}\n`);
 }
 
 // Save devices to devices.json
 function saveDevices(devices) {
-  try {
-    fs.writeFileSync(devicesFile, JSON.stringify(devices, null, 2), 'utf8');
-  } catch (error) {
-    console.error(`Error writing to devices.json: ${error.message}`);
-  }
+    fs.writeFileSync(DevicesFile, JSON.stringify(devices, null, 2), 'utf8');
 }
 
-// Ensure the existence of a directory
-function ensureDirectoryExists(directory) {
+// Make sure directory exists
+function FindDirectory(directory) {
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory);
   }
 }
 
-// Ensure the existence of a file with default content
-function ensureFileExists(file, defaultContent) {
+// Make sure file exists
+function FindFile(file, DefaultContent) {
   if (!fs.existsSync(file)) {
-    fs.writeFileSync(file, defaultContent, 'utf8');
+    fs.writeFileSync(file, DefaultContent, 'utf8');
   }
 }
 
-// Task 1: Setup and Initialization
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+
